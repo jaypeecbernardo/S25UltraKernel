@@ -10,32 +10,41 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout kernel source
+    - name: 📥 Checkout kernel source
       uses: actions/checkout@v4
 
-    - name: Set up environment
+    - name: 🛠️ Set up environment
       run: |
         sudo apt update
-        sudo apt install -y git wget build-essential bc bison flex libssl-dev libelf-dev
+        sudo apt install -y git wget build-essential bc bison flex \
+          libssl-dev libelf-dev python3 python3-distutils \
+          gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
 
-    - name: Clone toolchain
+    - name: ⚙️ Clone Proton Clang toolchain
       run: |
         git clone --depth=1 https://github.com/kdrag0n/proton-clang clang
+        # 🧹 Remove incompatible ld if it exists
+        rm -f clang/bin/ld || true
 
-    - name: Build the kernel
+    - name: 🏗️ Build the kernel
       run: |
         export ARCH=arm64
         export SUBARCH=arm64
         export CLANG_PATH=$(pwd)/clang
         export PATH="$CLANG_PATH/bin:$PATH"
-        make O=out ARCH=arm64 sun_gki_defconfig
-        make -j$(nproc) O=out ARCH=arm64 CC=clang CROSS_COMPILE=aarch64-linux-gnu- CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
 
-    - name: Upload Kernel Image
+        make O=out ARCH=arm64 sun_gki_defconfig
+        make -j$(nproc) O=out ARCH=arm64 \
+          CC=clang \
+          CLANG_TRIPLE=aarch64-linux-gnu- \
+          CROSS_COMPILE=aarch64-linux-gnu- \
+          CROSS_COMPILE_COMPAT=arm-linux-gnueabi-
+
+    - name: 📦 Upload Kernel Image
       uses: actions/upload-artifact@v4
       with:
         name: S25Ultra-Kernel
         path: out/arch/arm64/boot/Image.gz-dtb
-
