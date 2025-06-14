@@ -17,11 +17,12 @@ jobs:
       run: |
         sudo apt update
         sudo apt install -y git wget build-essential bc bison flex \
-          libssl-dev libelf-dev gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi
+          libssl-dev libelf-dev gcc-aarch64-linux-gnu gcc-arm-linux-gnueabi \
+          python3-venv
 
-        # Dynamically install the right Python distutils for the current Python version
-        PYVER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-        sudo apt install -y "python$PYVER-distutils"
+        # Use ensurepip instead of python3-distutils (Ubuntu 24.04 fix)
+        python3 -m ensurepip --upgrade
+        python3 -m pip install setuptools wheel
 
         git config --global user.name "GitHub Actions"
         git config --global user.email "actions@github.com"
